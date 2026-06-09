@@ -1,0 +1,32 @@
+{
+  "routes": [
+    {
+      "id": "eze-mad",
+      "label": "Buenos Aires → Madrid",
+      "origin": "EZE",
+      "destination": "MAD",
+      "date_from": "2025-11-01",
+      "date_to": "2025-11-30",
+      "max_price_usd": 700,
+      "passengers": 1,
+      "enabled": true
+    }
+  ],
+  "notifications": {
+    "telegram": {
+      "enabled": true,
+      "chat_id": "TU_CHAT_ID_AQUI"
+    },
+    "notify_on_increase": false,
+    "notify_every_check": false
+  },
+  "schedule": {
+    "every_hours": 6
+  },
+  "plugins": {
+    "google_flights": { "enabled": true },
+    "despegar": { "enabled": false },
+    "holidays_ar": { "enabled": true },
+    "weather_destination": { "enabled": false }
+  }
+}
