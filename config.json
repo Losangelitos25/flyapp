@@ -1,0 +1,78 @@
+{
+  "routes": [
+    {
+      "id": "eze-mad",
+      "label": "Buenos Aires → Madrid",
+      "origin": "EZE",
+      "destination": "MAD",
+      "scope_type": "airport",
+      "scope_value": "MAD",
+      "date_from": "2025-11-01",
+      "date_to": "2025-11-30",
+      "max_price": 700,
+      "currency": "USD",
+      "passengers": 1,
+      "enabled": true
+    },
+    {
+      "id": "eze-brc-flybondi",
+      "label": "Buenos Aires → Bariloche",
+      "origin": "EZE",
+      "destination": "BRC",
+      "scope_type": "airport",
+      "scope_value": "BRC",
+      "date_from": "2025-07-01",
+      "date_to": "2025-07-31",
+      "max_price": 120,
+      "currency": "USD",
+      "passengers": 1,
+      "enabled": true
+    },
+    {
+      "id": "eze-igr-flybondi",
+      "label": "Buenos Aires → Cataratas",
+      "origin": "EZE",
+      "destination": "IGR",
+      "scope_type": "airport",
+      "scope_value": "IGR",
+      "date_from": "2025-08-01",
+      "date_to": "2025-08-31",
+      "max_price": 100,
+      "currency": "USD",
+      "passengers": 1,
+      "enabled": true
+    },
+    {
+      "id": "eze-cun-despegar",
+      "label": "Buenos Aires → Cancún",
+      "origin": "EZE",
+      "destination": "CUN",
+      "scope_type": "airport",
+      "scope_value": "CUN",
+      "date_from": "2025-12-01",
+      "date_to": "2025-12-31",
+      "max_price": 800,
+      "currency": "USD",
+      "passengers": 1,
+      "enabled": true
+    }
+  ],
+  "notifications": {
+    "telegram": {
+      "enabled": true,
+      "chat_id": "8798667756"
+    },
+    "notify_on_increase": false,
+    "notify_every_check": false
+  },
+  "schedule": {
+    "every_hours": 6
+  },
+  "plugins": {
+    "google_flights": { "enabled": true },
+    "flybondi":       { "enabled": true },
+    "despegar":       { "enabled": true },
+    "holidays_ar":    { "enabled": true },
+    "weather_destination": { "enabled": false }
+  }
+}

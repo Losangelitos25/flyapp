@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✈️ Monitor de Vuelos</title>
+<style>
+:root {
+  --bg:#f8f7f4;--card:#fff;--border:rgba(0,0,0,0.1);--text:#2c2c2a;--muted:#5f5e5a;
+  --accent:#534ab7;--accent-bg:#eeedfe;--accent-text:#3c3489;
+  --green:#0f6e56;--green-bg:#e1f5ee;
+  --red:#a32d2d;--red-bg:#fcebeb;
+  --amber:#854f0b;--amber-bg:#faeeda;
+  --blue:#185fa5;--blue-bg:#e6f1fb;
+  --radius:12px;--radius-sm:8px;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1a1a18;--card:#242422;--border:rgba(255,255,255,0.1);--text:#e8e7e2;--muted:#888780;--accent-bg:#26215c;--accent-text:#afa9ec;}
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.5;padding-bottom:2rem;}
+
+header{background:var(--card);border-bottom:0.5px solid var(--border);padding:1rem 1.25rem;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
+header h1{font-size:16px;font-weight:500;flex:1;}
+.badge{background:var(--accent-bg);color:var(--accent-text);font-size:11px;padding:2px 8px;border-radius:20px;}
+
+.tabs{display:flex;border-bottom:0.5px solid var(--border);background:var(--card);}
+.tab{flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500;}
+
+.pane{display:none;padding:1rem;}
+.pane.active{display:block;}
+
+/* Cards */
+.card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;}
+.section-title{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:1rem 0 .5rem;}
+
+/* Price card */
+.route-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.route-title{font-size:14px;font-weight:500;}
+.price-big{font-size:26px;font-weight:500;}
+.price-big.ok{color:var(--green);}
+.price-big.over{color:var(--red);}
+.price-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;}
+.pill.ok{background:var(--green-bg);color:var(--green);}
+.pill.over{background:var(--red-bg);color:var(--red);}
+.pill.drop{background:var(--amber-bg);color:var(--amber);}
+.chart-wrap{margin-top:12px;overflow-x:auto;}
+canvas{width:100%!important;height:130px!important;}
+.last-check{font-size:10px;color:var(--muted);text-align:right;margin-top:6px;}
+
+/* Formulario */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-group{margin-bottom:.75rem;}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+input,select{width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--text);font-size:14px;appearance:none;-webkit-appearance:none;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+
+/* Toggle switch */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-meta{flex:1;}
+.toggle-label{font-size:14px;}
+.toggle-desc{font-size:11px;color:var(--muted);margin-top:1px;}
+.switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;inset:0;background:var(--border);border-radius:12px;transition:.3s;cursor:pointer;}
+.slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.slider{background:var(--accent);}
+input:checked+.slider:before{transform:translateX(20px);}
+input:disabled+.slider{opacity:.4;cursor:not-allowed;}
+
+/* Botones */
+.btn{display:block;width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;margin-top:.75rem;text-align:center;}
+.btn:active{opacity:.85;}
+.btn-outline{background:transparent;color:var(--accent);border:0.5px solid var(--accent);margin-top:.5rem;}
+.btn-sm{padding:6px 12px;width:auto;font-size:12px;display:inline-block;border-radius:6px;}
+
+/* Lista rutas config */
+.route-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border);}
+.route-item:last-child{border-bottom:none;}
+.route-item-info{flex:1;}
+.route-item-name{font-size:14px;}
+.route-item-sub{font-size:11px;color:var(--muted);}
+.del-btn{color:var(--red);background:none;border:none;font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;}
+
+/* Currency trio */
+.currency-trio{display:flex;gap:8px;margin-top:4px;}
+.cur-badge{background:var(--bg);border:0.5px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--muted);}
+.cur-badge strong{color:var(--text);}
+
+/* Info box */
+.info-box{background:var(--blue-bg);color:var(--blue);padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:.75rem;}
+.warn-box{background:var(--amber-bg);color:var(--amber);padding:10px 12px;border-radius:8px;font-size:12px;margin-top:.75rem;}
+
+/* Setup steps */
+.step{display:flex;gap:12px;margin-bottom:1.25rem;}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-body{font-size:13px;line-height:1.6;}
+.step-body code{background:var(--accent-bg);color:var(--accent-text);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:12px;}
+
+/* Msg */
+.msg{font-size:12px;margin-top:8px;text-align:center;min-height:18px;}
+.msg.ok{color:var(--green);}
+.msg.err{color:var(--red);}
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:20px">✈️</span>
+  <h1>Monitor de Vuelos</h1>
+  <span class="badge" id="route-count">cargando…</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('precios')">Precios</div>
+  <div class="tab" onclick="showTab('config')">Rutas</div>
+  <div class="tab" onclick="showTab('plugins')">Plugins</div>
+  <div class="tab" onclick="showTab('setup')">Setup</div>
+</div>
+
+<!-- ── PRECIOS ──────────────────────────────────────────────────────────── -->
+<div class="pane active" id="pane-precios">
+  <div id="prices-container">
+    <div style="text-align:center;padding:2rem;color:var(--muted)">
+      <div style="font-size:32px;margin-bottom:.5rem">📡</div>
+      <div>Cargando precios…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RUTAS ────────────────────────────────────────────────────────────── -->
+<div class="pane" id="pane-config">
+  <div class="section-title">Rutas activas</div>
+  <div class="card" id="routes-list-wrap">
+    <div id="routes-list" style="color:var(--muted);font-size:13px">Cargando…</div>
+  </div>
+
+  <div class="section-title">Nueva alerta de precio</div>
+  <div class="card">
+
+    <div class="form-group">
+      <label>Nombre de la alerta</label>
+      <input type="text" id="new-label" placeholder="Ej: Vuelos a Europa baratos">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Aeropuerto origen</label>
+        <input type="text" id="new-origin" placeholder="EZE" maxlength="3" style="text-transform:uppercase">
+      </div>
+      <div class="form-group">
+        <label>Moneda del umbral</label>
+        <select id="new-currency" onchange="updateCurrencyHint()">
+          <option value="USD">USD — Dólar</option>
+          <option value="EUR">EUR — Euro</option>
+          <option value="ARS">ARS — Peso AR</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tipo de destino -->
+    <div class="form-group">
+      <label>Tipo de destino</label>
+      <select id="new-scope-type" onchange="onScopeTypeChange()">
+        <option value="airport">Aeropuerto / ciudad específica</option>
+        <option value="continent">Continente</option>
+        <option value="country">País</option>
+        <option value="region">Región turística</option>
+        <option value="province">Provincia Argentina</option>
+      </select>
+    </div>
+
+    <!-- Destino dinámico -->
+    <div class="form-group" id="dest-airport-wrap">
+      <label>Código IATA destino</label>
+      <input type="text" id="new-dest-iata" placeholder="MAD, FCO, JFK…" maxlength="3" style="text-transform:uppercase">
+    </div>
+    <div class="form-group" id="dest-select-wrap" style="display:none">
+      <label id="dest-select-label">Seleccioná el destino</label>
+      <select id="new-dest-select"></select>
+    </div>
+
+    <!-- Precio umbral -->
+    <div class="form-group">
+      <label>Precio máximo (<span id="cur-label">USD</span>)</label>
+      <input type="number" id="new-price" placeholder="700" min="0" oninput="updateCurrencyHint()">
+    </div>
+    <div class="currency-trio" id="currency-hint" style="display:none">
+      <div class="cur-badge">≈ <strong id="hint-usd">—</strong> USD</div>
+      <div class="cur-badge">≈ <strong id="hint-eur">—</strong> EUR</div>
+      <div class="cur-badge">≈ <strong id="hint-ars">—</strong> ARS</div>
+    </div>
+
+    <!-- Fechas -->
+    <div class="form-row" style="margin-top:.75rem">
+      <div class="form-group">
+        <label>Fecha desde</label>
+        <input type="date" id="new-from">
+      </div>
+      <div class="form-group">
+        <label>Fecha hasta</label>
+        <input type="date" id="new-to">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Pasajeros</label>
+        <select id="new-pax">
+          <option value="1">1 pasajero</option>
+          <option value="2">2 pasajeros</option>
+          <option value="3">3 pasajeros</option>
+          <option value="4">4 pasajeros</option>
+        </select>
+      </div>
+      <div></div>
+    </div>
+
+    <button class="btn" onclick="addRoute()">+ Agregar alerta</button>
+    <div class="msg" id="add-msg"></div>
+  </div>
+</div>
+
+<!-- ── PLUGINS ──────────────────────────────────────────────────────────── -->
+<div class="pane" id="pane-plugins">
+  <div class="section-title">Fuentes de datos</div>
+  <div class="card">
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">🔍 Google Flights</div>
+        <div class="toggle-desc">Fuente principal. Sin API key.</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="plg-google" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">🟡 Flybondi</div>
+        <div class="toggle-desc">Vuelos low-cost domésticos y regionales</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="plg-flybondi"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">🧳 Despegar</div>
+        <div class="toggle-desc">Vuelos nacionales e internacionales</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="plg-despegar"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">🟠 TurismoCity</div>
+        <div class="toggle-desc">Buscador especializado en Argentina</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="plg-turismocity"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">🔵 Skyscanner</div>
+        <div class="toggle-desc">Buscador internacional con comparación</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="plg-skyscanner"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">🟣 CheapFlights</div>
+        <div class="toggle-desc">Especializado en vuelos baratos</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="plg-cheapflights"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">📅 Feriados AR</div>
+        <div class="toggle-desc">Avisa feriados cerca de tu vuelo</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="plg-holidays" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">🌤 Clima en destino</div>
+        <div class="toggle-desc">Próximamente</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="plg-weather" disabled><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div class="section-title">Monedas</div>
+  <div class="card">
+    <div class="info-box">
+      💱 Las tasas se actualizan automáticamente via <strong>open.er-api.com</strong> en cada run. No necesitás API key.
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">Mostrar ARS en alertas</div>
+        <div class="toggle-desc">Incluye el precio en pesos en el mensaje de Telegram</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="show-ars" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">Mostrar EUR en alertas</div>
+        <div class="toggle-desc">Incluye euros en el mensaje</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="show-eur" checked><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div class="section-title">Notificaciones Telegram</div>
+  <div class="card">
+    <div class="form-group">
+      <label>Tu Chat ID</label>
+      <input type="text" id="tg-chat-id" placeholder="Ej: 123456789">
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">Avisar si sube el precio</div>
+        <div class="toggle-desc">Por defecto solo avisa si baja</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="notif-increase"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-meta">
+        <div class="toggle-label">Avisar en cada check</div>
+        <div class="toggle-desc">Aunque no haya cambios</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="notif-always"><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <button class="btn" onclick="exportConfig()">📋 Copiar config.json actualizado</button>
+  <div class="msg ok" id="export-msg"></div>
+</div>
+
+<!-- ── SETUP ────────────────────────────────────────────────────────────── -->
+<div class="pane" id="pane-setup">
+  <div class="card">
+    <div style="font-size:15px;font-weight:500;margin-bottom:1rem">🚀 Cómo configurarlo</div>
+
+    <div class="step"><div class="step-num">1</div><div class="step-body">
+      <strong>Crear el repo en GitHub</strong><br>
+      Creá un repo público llamado <code>flight-monitor</code> y subí todos los archivos del ZIP.
+    </div></div>
+
+    <div class="step"><div class="step-num">2</div><div class="step-body">
+      <strong>Crear bot de Telegram</strong><br>
+      Hablale a <code>@BotFather</code> → <code>/newbot</code> → copiá el token.
+    </div></div>
+
+    <div class="step"><div class="step-num">3</div><div class="step-body">
+      <strong>Obtener tu Chat ID</strong><br>
+      Hablale a <code>@userinfobot</code> en Telegram → te responde tu ID. Pegalo en Plugins → Telegram.
+    </div></div>
+
+    <div class="step"><div class="step-num">4</div><div class="step-body">
+      <strong>Cargar secreto en GitHub</strong><br>
+      Settings → Secrets → Actions → New: nombre <code>TELEGRAM_TOKEN</code>, valor = el token.
+    </div></div>
+
+    <div class="step"><div class="step-num">5</div><div class="step-body">
+      <strong>Activar GitHub Pages</strong><br>
+      Settings → Pages → Branch <code>main</code>, carpeta <code>/dashboard</code>. Dashboard en vivo en ~1 min.
+    </div></div>
+
+    <div class="step"><div class="step-num">6</div><div class="step-body">
+      <strong>Primer run manual</strong><br>
+      Actions → Flight Monitor → Run workflow. Después corre solo cada 6 hs.
+    </div></div>
+
+    <div class="warn-box">
+      💡 <strong>100% gratuito:</strong> GitHub Actions da 2000 min/mes gratis. Corriendo cada 6 hs usás ~12 min/mes.
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ── Tasas de cambio (se actualizan al cargar) ─────────────────────────────
+const RATES = { USD: 1, EUR: 0.93, ARS: 1050 };
+async function fetchRates() {
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/USD');
+    const d = await r.json();
+    if (d.rates) {
+      RATES.EUR = d.rates.EUR || RATES.EUR;
+      RATES.ARS = d.rates.ARS || RATES.ARS;
+    }
+  } catch(e) {}
+}
+function toUSD(amount, cur) { return cur === 'USD' ? amount : cur === 'EUR' ? amount / RATES.EUR : amount / RATES.ARS; }
+function fromUSD(usd, cur)  { return cur === 'USD' ? usd : cur === 'EUR' ? usd * RATES.EUR : usd * RATES.ARS; }
+function fmtCur(usd, cur) {
+  const v = fromUSD(usd, cur);
+  if (cur === 'ARS') return '$' + Math.round(v).toLocaleString('es-AR');
+  if (cur === 'EUR') return '€' + Math.round(v).toLocaleString('es-AR');
+  return 'USD ' + Math.round(v).toLocaleString('es-AR');
+}
+
+// ── Mapa de destinos ──────────────────────────────────────────────────────
+const SCOPE_OPTIONS = {
+  continent: ['Europa','América del Norte','América del Sur','Asia','África','Oceanía','Caribe','Medio Oriente'],
+  country: ['España','Francia','Italia','Portugal','Alemania','Países Bajos','Reino Unido','Grecia','Turquía','Suiza','Austria','Bélgica','Dinamarca','Suecia','Noruega','Finlandia','Irlanda','República Checa','Hungría','Polonia','Rumanía','Croacia','Brasil','Chile','Colombia','Perú','Uruguay','Paraguay','Bolivia','Venezuela','Ecuador','México','Cuba','Emiratos Árabes','Qatar','Tailandia','Japón','Indonesia','India','Singapur','Malasia','Australia','Nueva Zelanda','Marruecos','Sudáfrica','Egipto','Kenia','Tanzania','Etiopía','Maldivas','Sri Lanka','Estados Unidos','Canadá'],
+  region: ['Mediterráneo','Europa del Este','Escandinavia','Europa Central','Caribe','Sudeste Asiático','Playas del Pacífico','Oriente Medio','África del Sur','África del Norte','Safari / África Oriental','Sudamérica Andina','Brasil','Islas del Índico','Japón / Corea','China','Australia / NZ','Norteamérica','América Central'],
+  province: ['Buenos Aires','Córdoba','Mendoza','Bariloche / Patagonia','Salta / NOA','Misiones / Cataratas','Mar del Plata','Ushuaia / Tierra del Fuego','Neuquén','Santa Fe','Tucumán','Chubut / Puerto Madryn','El Calafate','La Rioja','Catamarca'],
+};
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function showTab(name) {
+  ['precios','config','plugins','setup'].forEach((t, i) => {
+    document.querySelectorAll('.tab')[i].classList.toggle('active', t === name);
+    document.getElementById('pane-' + t).classList.toggle('active', t === name);
+  });
+}
+
+// ── Scope type change ─────────────────────────────────────────────────────
+function onScopeTypeChange() {
+  const type = document.getElementById('new-scope-type').value;
+  const isAirport = type === 'airport';
+  document.getElementById('dest-airport-wrap').style.display = isAirport ? '' : 'none';
+  document.getElementById('dest-select-wrap').style.display  = isAirport ? 'none' : '';
+
+  if (!isAirport) {
+    const labels = { continent:'Continente', country:'País', region:'Región turística', province:'Provincia Argentina' };
+    document.getElementById('dest-select-label').textContent = labels[type] || 'Destino';
+    const sel = document.getElementById('new-dest-select');
+    sel.innerHTML = (SCOPE_OPTIONS[type] || []).map(o => `<option value="${o}">${o}</option>`).join('');
+  }
+}
+
+// ── Currency hint ─────────────────────────────────────────────────────────
+function updateCurrencyHint() {
+  const amount = parseFloat(document.getElementById('new-price').value);
+  const cur    = document.getElementById('new-currency').value;
+  document.getElementById('cur-label').textContent = cur;
+  const hint = document.getElementById('currency-hint');
+  if (!amount || isNaN(amount)) { hint.style.display = 'none'; return; }
+  hint.style.display = 'flex';
+  const usd = toUSD(amount, cur);
+  document.getElementById('hint-usd').textContent = Math.round(usd).toLocaleString('es-AR');
+  document.getElementById('hint-eur').textContent = Math.round(fromUSD(usd, 'EUR')).toLocaleString('es-AR');
+  document.getElementById('hint-ars').textContent = Math.round(fromUSD(usd, 'ARS')).toLocaleString('es-AR');
+}
+
+// ── Agregar ruta ──────────────────────────────────────────────────────────
+let configData = { routes: [], notifications: { telegram: { enabled: true, chat_id: '' }, notify_on_increase: false, notify_every_check: false }, plugins: { google_flights: { enabled: true }, despegar: { enabled: false }, holidays_ar: { enabled: true }, weather_destination: { enabled: false } } };
+
+function setMsg(id, text, cls) {
+  const el = document.getElementById(id);
+  el.textContent = text; el.className = 'msg ' + cls;
+}
+
+function addRoute() {
+  const label    = document.getElementById('new-label').value.trim();
+  const origin   = document.getElementById('new-origin').value.trim().toUpperCase();
+  const currency = document.getElementById('new-currency').value;
+  const price    = parseFloat(document.getElementById('new-price').value);
+  const from     = document.getElementById('new-from').value;
+  const to       = document.getElementById('new-to').value;
+  const pax      = parseInt(document.getElementById('new-pax').value);
+  const scopeType= document.getElementById('new-scope-type').value;
+  const scopeVal = scopeType === 'airport'
+    ? document.getElementById('new-dest-iata').value.trim().toUpperCase()
+    : document.getElementById('new-dest-select').value;
+
+  if (!label || !origin || !scopeVal || !from || !to || isNaN(price)) {
+    setMsg('add-msg', '⚠️ Completá todos los campos', 'err'); return;
+  }
+
+  const id = origin.toLowerCase() + '-' + scopeVal.toLowerCase().replace(/\s+/g,'-') + '-' + Date.now();
+  configData.routes.push({
+    id, label,
+    origin,
+    scope_type:  scopeType,
+    scope_value: scopeVal,
+    destination: scopeType === 'airport' ? scopeVal : undefined,
+    currency,
+    max_price: price,
+    date_from: from,
+    date_to:   to,
+    passengers: pax,
+    enabled: true,
+  });
+
+  renderRoutes();
+  ['new-label','new-origin','new-price','new-from','new-to','new-dest-iata'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('currency-hint').style.display = 'none';
+  setMsg('add-msg', '✅ Alerta agregada. Copiá el config.json desde Plugins.', 'ok');
+}
+
+function deleteRoute(idx) {
+  if (!confirm('¿Eliminar esta alerta?')) return;
+  configData.routes.splice(idx, 1);
+  renderRoutes();
+}
+
+function renderRoutes() {
+  const list = document.getElementById('routes-list');
+  if (!configData.routes.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px">No hay rutas. Agregá una abajo.</div>';
+    return;
+  }
+  list.innerHTML = configData.routes.map((r, i) => {
+    const dest = r.scope_type === 'airport' ? r.scope_value : `${r.scope_type === 'continent' ? '🌍' : r.scope_type === 'country' ? '🏳️' : r.scope_type === 'region' ? '📍' : '🗺️'} ${r.scope_value}`;
+    const maxStr = r.currency === 'EUR' ? `€${r.max_price}` : r.currency === 'ARS' ? `$${r.max_price.toLocaleString()}` : `USD ${r.max_price}`;
+    return `<div class="route-item">
+      <div class="route-item-info">
+        <div class="route-item-name">${r.label}</div>
+        <div class="route-item-sub">${r.origin} → ${dest} · Máx ${maxStr}</div>
+      </div>
+      <button class="del-btn" onclick="deleteRoute(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Cargar precios ────────────────────────────────────────────────────────
+let charts = {};
+async function loadPrices() {
+  try {
+    const resp = await fetch('prices.json?t=' + Date.now());
+    if (!resp.ok) throw new Error();
+    const data = await resp.json();
+    renderPrices(data);
+    document.getElementById('route-count').textContent = Object.keys(data).length + ' ruta(s)';
+  } catch(e) {
+    document.getElementById('prices-container').innerHTML = `
+      <div style="text-align:center;padding:2rem;color:var(--muted)">
+        <div style="font-size:32px;margin-bottom:.5rem">📭</div>
+        <div style="font-size:14px">Todavía no hay datos</div>
+        <div style="font-size:12px;margin-top:6px">Corré el monitor desde GitHub Actions → Run workflow</div>
+      </div>`;
+    document.getElementById('route-count').textContent = '0 rutas';
+  }
+}
+
+function renderPrices(data) {
+  const cont = document.getElementById('prices-container');
+  const entries = Object.entries(data);
+  if (!entries.length) { cont.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Sin datos aún</div>'; return; }
+
+  cont.innerHTML = '';
+  entries.forEach(([id, r]) => {
+    const cur     = r.currency || 'USD';
+    const maxUsd  = toUSD(r.max_price || r.max_price_usd || 9999, cur);
+    const below   = r.current_price_usd <= maxUsd;
+    const hist    = r.history || [];
+    const prevUsd = hist.length >= 2 ? hist[hist.length - 2].price_usd : null;
+    const drop    = prevUsd ? prevUsd - r.current_price_usd : 0;
+
+    const displayPrice = fmtCur(r.current_price_usd, cur);
+    const subPrices = [
+      cur !== 'USD' ? 'USD ' + Math.round(r.current_price_usd) : null,
+      cur !== 'EUR' ? '€'   + Math.round(fromUSD(r.current_price_usd, 'EUR')) : null,
+      cur !== 'ARS' ? '$'   + Math.round(fromUSD(r.current_price_usd, 'ARS')).toLocaleString('es-AR') : null,
+    ].filter(Boolean).join(' · ');
+
+    const destLabel = r.scope_type === 'airport' ? (r.best_dest || r.scope_value) : `${r.scope_value} → ${r.best_dest || ''}`;
+    const lastCheck = r.last_check ? new Date(r.last_check).toLocaleString('es-AR') : '—';
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="route-header">
+        <div>
+          <div class="route-title">${r.label}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${r.origin} → ${destLabel}</div>
+        </div>
+        <div style="text-align:right">
+          ${below ? '<span class="pill ok">✅ Bajo umbral</span>' : '<span class="pill over">⚠️ Sobre umbral</span>'}
+          ${drop >= 20 ? `<br><span class="pill drop" style="margin-top:4px">📉 −${fmtCur(drop, cur)}</span>` : ''}
+        </div>
+      </div>
+      <div class="price-big ${below ? 'ok' : 'over'}">${displayPrice}</div>
+      <div class="price-sub">${subPrices}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Umbral: ${fmtCur(maxUsd, cur)} · ${r.airline || ''}</div>
+      <div class="chart-wrap"><canvas id="chart-${id}"></canvas></div>
+      <div class="last-check">Último check: ${lastCheck}</div>
+    `;
+    cont.appendChild(card);
+
+    // Gráfico
+    const labels = hist.map(h => new Date(h.timestamp).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}));
+    const vals   = hist.map(h => Math.round(fromUSD(h.price_usd, cur)));
+    requestAnimationFrame(() => {
+      const ctx = document.getElementById('chart-' + id);
+      if (!ctx) return;
+      if (charts[id]) charts[id].destroy();
+      charts[id] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data: vals,
+            borderColor: below ? '#0f6e56' : '#a32d2d',
+            backgroundColor: below ? 'rgba(15,110,86,0.07)' : 'rgba(163,45,45,0.07)',
+            borderWidth: 1.5,
+            pointRadius: vals.length > 20 ? 0 : 3,
+            tension: 0.3, fill: true,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtCur(toUSD(c.raw, cur) /* ya en cur */, cur) } } },
+          scales: {
+            x: { display: false },
+            y: { display: true, grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { font: { size: 10 }, callback: v => fmtCur(toUSD(v, cur), cur) } }
+          }
+        }
+      });
+    });
+  });
+}
+
+// ── Cargar config ─────────────────────────────────────────────────────────
+async function loadConfig() {
+  try {
+    const r = await fetch('../config.json?t=' + Date.now());
+    if (r.ok) configData = await r.json();
+  } catch(e) {}
+  renderRoutes();
+  loadPluginUI();
+}
+
+function loadPluginUI() {
+  const p = configData.plugins || {};
+  document.getElementById('plg-google').checked      = p.google_flights?.enabled ?? true;
+  document.getElementById('plg-flybondi').checked    = p.flybondi?.enabled      ?? false;
+  document.getElementById('plg-despegar').checked    = p.despegar?.enabled      ?? false;
+  document.getElementById('plg-turismocity').checked = p.turismocity?.enabled   ?? false;
+  document.getElementById('plg-skyscanner').checked  = p.skyscanner?.enabled    ?? false;
+  document.getElementById('plg-cheapflights').checked= p.cheapflights?.enabled  ?? false;
+  document.getElementById('plg-holidays').checked = p.holidays_ar?.enabled ?? true;
+  const n = configData.notifications || {};
+  document.getElementById('tg-chat-id').value      = n.telegram?.chat_id || '';
+  document.getElementById('notif-increase').checked = n.notify_on_increase ?? false;
+  document.getElementById('notif-always').checked   = n.notify_every_check ?? false;
+}
+
+// ── Export config ─────────────────────────────────────────────────────────
+function exportConfig() {
+  configData.plugins = {
+    google_flights:      { enabled: document.getElementById('plg-google').checked },
+    flybondi:            { enabled: document.getElementById('plg-flybondi').checked },
+    despegar:            { enabled: document.getElementById('plg-despegar').checked },
+    turismocity:         { enabled: document.getElementById('plg-turismocity').checked },
+    skyscanner:          { enabled: document.getElementById('plg-skyscanner').checked },
+    cheapflights:        { enabled: document.getElementById('plg-cheapflights').checked },
+    holidays_ar:         { enabled: document.getElementById('plg-holidays').checked },
+    weather_destination: { enabled: false },
+  };
+  configData.notifications = {
+    telegram:           { enabled: true, chat_id: document.getElementById('tg-chat-id').value.trim() },
+    notify_on_increase: document.getElementById('notif-increase').checked,
+    notify_every_check: document.getElementById('notif-always').checked,
+  };
+  const json = JSON.stringify(configData, null, 2);
+  navigator.clipboard.writeText(json)
+    .then(() => setMsg('export-msg', '✅ Copiado. Pegalo en config.json de tu repo y hacé commit.', 'ok'))
+    .catch(() => { const t = document.createElement('textarea'); t.value = json; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); setMsg('export-msg','✅ Copiado','ok'); });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+fetchRates();
+loadPrices();
+loadConfig();
+onScopeTypeChange();
+</script>
+</body>
+</html>
