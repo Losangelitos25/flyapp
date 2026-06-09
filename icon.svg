@@ -1,0 +1,31 @@
+<svg width="800" height="800" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+<rect width="800" height="800" fill="#07071a" rx="180"/>
+<circle cx="60"  cy="60"  r="1.5" fill="#fff" opacity="0.5"/>
+<circle cx="180" cy="90"  r="1.2" fill="#fff" opacity="0.4"/>
+<circle cx="300" cy="40"  r="1.5" fill="#fff" opacity="0.6"/>
+<circle cx="500" cy="30"  r="1.2" fill="#fff" opacity="0.4"/>
+<circle cx="650" cy="70"  r="1.5" fill="#fff" opacity="0.5"/>
+<circle cx="750" cy="120" r="1"   fill="#fff" opacity="0.3"/>
+<circle cx="80"  cy="200" r="1"   fill="#fff" opacity="0.3"/>
+<circle cx="720" cy="200" r="1.2" fill="#fff" opacity="0.4"/>
+<circle cx="140" cy="650" r="1"   fill="#fff" opacity="0.3"/>
+<circle cx="680" cy="680" r="1.2" fill="#fff" opacity="0.4"/>
+<circle cx="400" cy="720" r="1"   fill="#fff" opacity="0.25"/>
+<circle cx="50"  cy="720" r="1"   fill="#fff" opacity="0.3"/>
+<circle cx="760" cy="740" r="1"   fill="#fff" opacity="0.3"/>
+<circle cx="250" cy="760" r="0.9" fill="#fff" opacity="0.3"/>
+<circle cx="570" cy="750" r="1"   fill="#fff" opacity="0.35"/>
+<g transform="translate(170,190) scale(3.8)">
+  <rect x="0" y="36" width="120" height="8" rx="4" fill="none" stroke="#f0abfc" stroke-width="2"/>
+  <path d="M120 36 Q142 40 120 44" fill="#f0abfc" stroke="#f0abfc" stroke-width="1"/>
+  <rect x="100" y="37" width="14" height="6" rx="2" fill="#6366f1" opacity="0.9"/>
+  <path d="M55 36 L30 8 L20 8 L40 36" fill="none" stroke="#f0abfc" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M55 44 L30 72 L20 72 L40 44" fill="none" stroke="#f0abfc" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M8 36 L0 22 L12 36" fill="none" stroke="#f0abfc" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M8 44 L0 58 L12 44" fill="none" stroke="#f0abfc" stroke-width="1.5" stroke-linejoin="round"/>
+  <rect x="38" y="44" width="22" height="6" rx="3" fill="none" stroke="#c026d3" stroke-width="1.5"/>
+</g>
+<text x="400" y="620" font-family="system-ui,sans-serif" font-size="68" font-weight="700" fill="none" stroke="#f0abfc" stroke-width="1.5" text-anchor="middle" letter-spacing="6">FLIGHT</text>
+<text x="400" y="700" font-family="system-ui,sans-serif" font-size="68" font-weight="700" fill="none" stroke="#f0abfc" stroke-width="1.5" text-anchor="middle" letter-spacing="6">MONITOR</text>
+<text x="400" y="748" font-family="system-ui,sans-serif" font-size="22" fill="#a855f7" text-anchor="middle" letter-spacing="5" opacity="0.7">precio más bajo · siempre</text>
+</svg>
